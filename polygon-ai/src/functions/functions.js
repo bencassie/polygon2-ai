@@ -7,31 +7,44 @@ function getApiKey() {
 }
 
 /**
- * Gets ticker details from Polygon.io.
+ * Gets a specific ticker detail from Polygon.io.
  * @customfunction
  * @param {string} ticker The stock ticker symbol (e.g., "AAPL").
- * @returns {Promise<string>} JSON string of the ticker details.
+ * @param {string} [property] The property to retrieve (e.g., "name", "market"). If omitted, returns a formatted string.
+ * @returns {Promise<string>} The value of the specified property or a formatted string if no property is provided.
  */
-async function getTickerDetails(ticker) {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    throw new Error("API key not set. Please set your Polygon.io API key in the task pane.");
-  }
-
-  const url = `https://api.polygon.io/v3/reference/tickers?ticker=${ticker}&active=true&limit=100&apiKey=${apiKey}`;
-
+export async function getTickerDetails(ticker, property) {
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const apiKey = getApiKey(); // Assume this retrieves your Polygon.io API key
+    if (!apiKey) {
+      return "API key not set. Please set your Polygon.io API key.";
     }
+
+    const url = `https://api.polygon.io/v3/reference/tickers?ticker=${ticker}&active=true&limit=100&apiKey=${apiKey}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      return `HTTP error! status: ${response.status}`;
+    }
+
     const data = await response.json();
-    return JSON.stringify(data);
+    if (data.results && data.results.length > 0) {
+      const details = data.results[0]; // The ticker details object
+
+      if (property) {
+        // Return the specific property if provided
+        return details[property] || "Property not found.";
+      } else {
+        // Return a formatted string if no property is specified
+        return `${details.ticker} - ${details.name} (${details.market})`;
+      }
+    } else {
+      return "No ticker details found.";
+    }
   } catch (error) {
-    throw new Error(`Failed to fetch ticker details: ${error.message}`);
+    return `Error: ${error.message}`;
   }
 }
-
 
 // /**
 //  * Add two numbers
