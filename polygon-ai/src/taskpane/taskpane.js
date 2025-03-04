@@ -10,6 +10,7 @@ Office.onReady(() => {
   document.getElementById("sideload-msg").style.display = "none";
   document.getElementById("app-body").style.display = "flex";
   document.getElementById("run").onclick = run;
+  document.getElementById("setApiKey").onclick = setApiKey;
 });
 
 export async function run() {
@@ -28,6 +29,22 @@ export async function run() {
 
       await context.sync();
       console.log(`The range address was ${range.address}.`);
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+let apiKey = "";
+
+export async function setApiKey() {
+
+  try {
+    await Excel.run(async (context) => {
+      const input = document.getElementById("apiKeyInput").value;
+      apiKey = input;
+      localStorage.setItem("polygonApiKey", input); // Optional: persists across sessions
+      console.log("API key saved!");
     });
   } catch (error) {
     console.error(error);
