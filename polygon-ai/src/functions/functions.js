@@ -16,7 +16,7 @@ export function add(first, second) {
  * @customfunction
  * @returns {string} "Hello World"
  */
-function helloWorld() {
+export function helloWorld() {
   return "Hello World";
 }
 
