@@ -28,27 +28,9 @@
         <!-- Custom Functions Section -->
         <section id="custom-functions-section">
             <h2 class="ms-font-xl">Custom Functions</h2>
-            <div class="function">
-                <h3 class="ms-font-l">getTickerDetails(ticker, [property])</h3>
-                <p class="ms-font-m">Retrieves details for a specific stock ticker from Polygon.io.</p>
-                <h4 class="ms-font-m">Parameters:</h4>
-                <ul>
-                    <li><strong>ticker</strong>: The stock ticker symbol (e.g., "AAPL").</li>
-                    <li><strong>property</strong>: (Optional) The specific property to retrieve (e.g., "name", "market"). If omitted, returns a formatted string.</li>
-                </ul>
-                <h4 class="ms-font-m">Examples:</h4>
-                <ul>
-                    <li><code>=getTickerDetails("AAPL")</code> // Returns "AAPL - Apple Inc. (stocks)"</li>
-                    <li><code>=getTickerDetails("AAPL", "name")</code> // Returns "Apple Inc."</li>
-                </ul>
-                <p class="ms-font-m"><strong>Note:</strong> Ensure you have set your Polygon.io API key above.</p>
+            <div id="functions-list">
+                <!-- Functions will be dynamically added here -->
             </div>
-            <!-- Add more function divs here if additional functions are implemented -->
-        </section>
-        <!-- Example Insertion Section -->
-        <section id="example-section">
-            <p class="ms-font-m">Click "Insert Example" to insert a sample formula into the active cell.</p>
-            <button id="run" class="ms-Button ms-Button--hero">Insert Example</button>
         </section>
     </main>
 </body>
