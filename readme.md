@@ -19,8 +19,8 @@ This Excel add-in integrates with Polygon.io API to fetch financial data directl
 
 1. **Clone & Install**
    ```powershell
-   git clone https://github.com/yourusername/polygon-ai.git
-   cd polygon-ai
+   git clone https://github.com/bencassie/polygon2-ai.git
+   cd polygon2-ai
    npm install
    ```
 
