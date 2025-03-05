@@ -9,24 +9,22 @@ html, body {
 }
 
 .ms-welcome__header {
-    padding: 20px;
-    background: linear-gradient(135deg, #0078d4, #005a9e);
-    color: white;
+    padding: 10px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
     text-align: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(0, 120, 212, 0.2);
 }
 
 .ms-welcome__header img {
     width: 80px;
     height: 80px;
-    border-radius: 50%;
-    border: 2px solid white;
+    transition: transform 0.2s ease;
 }
 
-.ms-welcome__header h1 {
-    margin-top: 10px;
-    font-size: 1.8rem;
-    font-weight: 500;
+.ms-welcome__header img:hover {
+    transform: scale(1.05);
 }
 
 .ms-welcome__main {
