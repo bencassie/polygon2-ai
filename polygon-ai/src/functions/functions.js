@@ -237,22 +237,22 @@ export async function getDividends(ticker, limit = 4) {
  * @param {number} [period=14] The period to use for calculation.
  * @param {string} [from] The start date in YYYY-MM-DD format. Defaults to 30 days ago.
  * @param {string} [to] The end date in YYYY-MM-DD format. Defaults to today.
- * @returns {Promise<number[]|string>} An array of indicator values or an error message.
+ * @returns {string[][]} A 2D array of indicator values with dates or an error message.
  */
 export async function getTechnicalIndicator(ticker, indicator, period = 14, from, to) {
   try {
     const apiKey = getApiKey();
     if (!apiKey) {
-      return "API key not set. Please set your Polygon.io API key.";
+      return [["API key not set. Please set your Polygon.io API key."]];
     }
 
     // Parameter validation
     if (!ticker) {
-      return "Missing required parameter: ticker";
+      return [["Missing required parameter: ticker"]];
     }
     
     if (!indicator) {
-      return "Missing required parameter: indicator";
+      return [["Missing required parameter: indicator"]];
     }
 
     // Set default dates if not provided
@@ -268,7 +268,7 @@ export async function getTechnicalIndicator(ticker, indicator, period = 14, from
 
     // Format validation for dates
     if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
-      return "Date format must be YYYY-MM-DD";
+      return [["Date format must be YYYY-MM-DD"]];
     }
 
     // Get historical prices to calculate indicators
@@ -277,49 +277,103 @@ export async function getTechnicalIndicator(ticker, indicator, period = 14, from
 
     if (!response.ok) {
       if (response.status === 403) {
-        return "Access forbidden: Check API key permissions or subscription tier";
+        return [["Access forbidden: Check API key permissions or subscription tier"]];
       } else if (response.status === 429) {
-        return "Rate limit exceeded: Try again later or upgrade your subscription";
+        return [["Rate limit exceeded: Try again later or upgrade your subscription"]];
       }
-      return `Could not retrieve price data (HTTP ${response.status})`;
+      return [[`Could not retrieve price data (HTTP ${response.status})`]];
     }
 
     const data = await response.json();
     if (!data.results || data.results.length === 0) {
-      return "Insufficient price data to calculate indicator.";
+      return [["Insufficient price data to calculate indicator."]];
     }
     
     const prices = data.results.map(bar => bar.c); // Use closing prices
+    const dates = data.results.map(bar => {
+      // Convert timestamp to date string (timestamp is in milliseconds)
+      const date = new Date(bar.t);
+      return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    });
     
     // Validate prices array
     if (!prices.every(price => typeof price === 'number' && !isNaN(price))) {
-      return "Invalid price data received";
+      return [["Invalid price data received"]];
     }
 
     // Ensure period is valid
     if (period <= 0 || period >= prices.length) {
-      return `Invalid period: ${period}. Must be between 1 and ${prices.length-1}`;
+      return [[`Invalid period: ${period}. Must be between 1 and ${prices.length-1}`]];
     }
 
     // Calculate with improved error handling
     try {
+      let result = [];
+      let indicatorValues = [];
+      let startIndex = 0;
+      
       switch (indicator.toUpperCase()) {
         case "SMA":
-          return calculateSMA(prices, period);
+          indicatorValues = calculateSMA(prices, period);
+          startIndex = period - 1;
+          // Create a header row
+          result.push(["Date", `SMA(${period})`]);
+          break;
         case "EMA":
-          return calculateEMA(prices, period);
+          indicatorValues = calculateEMA(prices, period);
+          startIndex = period - 1;
+          result.push(["Date", `EMA(${period})`]);
+          break;
         case "RSI":
-          return calculateRSI(prices, period);
+          indicatorValues = calculateRSI(prices, period);
+          startIndex = period;
+          result.push(["Date", `RSI(${period})`]);
+          break;
         case "MACD":
-          return calculateMACD(prices, 12, 26, 9); // Standard MACD parameters
+          const macdResult = calculateMACD(prices, 12, 26, 9); // Standard MACD parameters
+          const [macdLine, signalLine, histogram] = macdResult;
+          
+          // For MACD, we need to determine the start index based on the shortest array
+          startIndex = prices.length - macdLine.length;
+          
+          // Create header row for MACD
+          result.push(["Date", "MACD Line", "Signal Line", "Histogram"]);
+          
+          // Create data rows for MACD (all 3 components)
+          for (let i = 0; i < macdLine.length; i++) {
+            const dateIndex = startIndex + i;
+            if (dateIndex < dates.length) {
+              result.push([
+                dates[dateIndex],
+                macdLine[i].toFixed(4),
+                signalLine[i].toFixed(4),
+                histogram[i].toFixed(4)
+              ]);
+            }
+          }
+          
+          return result;
         default:
-          return `Unsupported indicator: ${indicator}. Available options: SMA, EMA, RSI, MACD`;
+          return [[`Unsupported indicator: ${indicator}. Available options: SMA, EMA, RSI, MACD`]];
       }
+      
+      // For single-value indicators (SMA, EMA, RSI), create rows with date and value
+      for (let i = 0; i < indicatorValues.length; i++) {
+        const dateIndex = startIndex + i;
+        if (dateIndex < dates.length) {
+          result.push([
+            dates[dateIndex],
+            indicatorValues[i].toFixed(4)
+          ]);
+        }
+      }
+      
+      return result;
     } catch (calcError) {
-      return `Calculation error: ${calcError.message}`;
+      return [[`Calculation error: ${calcError.message}`]];
     }
   } catch (error) {
-    return `Error: ${error.message}`;
+    return [[`Error: ${error.message}`]];
   }
 }
 
