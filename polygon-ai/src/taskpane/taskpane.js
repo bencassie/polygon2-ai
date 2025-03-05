@@ -26,11 +26,6 @@ Office.onReady(() => {
       description: "Gets the current market status from Polygon.io"
     },
     {
-      signature: "=POLYGON.getFinancialMetrics(ticker, [metric])",
-      example: '=POLYGON.getFinancialMetrics("AAPL")',
-      description: "Retrieves financial metrics for a ticker"
-    },
-    {
       signature: "=POLYGON.getDividends(ticker, [limit])",
       example: '=POLYGON.getDividends("AAPL", 4)',
       description: "Retrieves dividend information for a ticker"

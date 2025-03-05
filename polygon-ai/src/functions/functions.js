@@ -158,63 +158,6 @@ export async function getMarketStatus(market = "us") {
   }
 }
 
-/**
- * Retrieves company earnings data for a ticker from Polygon.io.
- * @customfunction
- * @param {string} ticker The stock ticker symbol (e.g., "AAPL").
- * @param {number} [limit=4] The number of quarters to retrieve.
- * @returns {Promise<string[][]>} A 2D array of earnings data.
- */
-export async function getEarnings(ticker, limit = 4) {
-  try {
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      return "API key not set. Please set your Polygon.io API key.";
-    }
-
-    // Check if ticker is valid
-    if (!ticker) {
-      return "Missing required parameter: ticker";
-    }
-
-    limit = (limit && limit > 0) ? limit : 4;
-    
-    // The current earnings endpoint in Polygon.io's API v3
-    const url = `https://api.polygon.io/v3/reference/tickers/${ticker}/results?limit=${limit}&apiKey=${apiKey}`;
-    
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      return [["Earnings data unavailable", `HTTP status: ${response.status}`, "This endpoint might require a premium subscription"]];
-    }
-
-    const data = await response.json();
-    if (data.results && data.results.length > 0) {
-      // Header row
-      const results = [
-        ["Quarter", "Date", "EPS Actual", "EPS Estimate", "Revenue Actual", "Revenue Estimate"]
-      ];
-      
-      // Data rows
-      data.results.forEach(quarter => {
-        results.push([
-          quarter.period || "N/A",
-          quarter.date || "N/A",
-          quarter.eps || "N/A",
-          quarter.eps_estimate || "N/A",
-          quarter.revenue || "N/A",
-          quarter.revenue_estimate || "N/A"
-        ]);
-      });
-      
-      return results;
-    } else {
-      return [["No earnings data found."]];
-    }
-  } catch (error) {
-    return [[`Error: ${error.message}`]];
-  }
-}
 
 /**
  * Sets the Polygon.io API key for use in all functions.
