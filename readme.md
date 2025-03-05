@@ -13,41 +13,71 @@ This Excel add-in integrates with Polygon.io API to fetch financial data directl
 * Microsoft Excel (Desktop or Online)
 * [Polygon.io API key](https://polygon.io/)
 
-## Setup & Installation
+## Setup & Installation (Windows with PowerShell)
 
 1. **Clone & Install**
-   ```bash
+   ```powershell
    git clone https://github.com/yourusername/polygon-ai.git
    cd polygon-ai
    npm install
    ```
 
 2. **Get Development Certificates**
-   ```bash
+   ```powershell
    npx office-addin-dev-certs install
    ```
+   > Note: If you receive a security prompt, select 'Yes' to install the certificate
 
 3. **Build the Project**
-   ```bash
+   ```powershell
    npm run build
    ```
 
 4. **Start Development Server**
-   ```bash
+   ```powershell
    npm run dev-server
    ```
+   > The server will start at https://localhost:3000
 
 ## Sideload the Add-in
 
-### For Excel Desktop
+### For Excel Desktop (Upload Method)
 1. Open Excel and a blank workbook
 2. Go to **Insert** tab > **Add-ins** > **My Add-ins** > **Manage My Add-ins** > **Upload My Add-in**
 3. Browse to the project folder and select `manifest.xml`
 
+### For Excel Desktop (Network Share Method - Windows)
+1. Create a network share using PowerShell (or use an existing share):
+   ```powershell
+   # Create a folder for sharing
+   New-Item -Path "C:\PolygonShare" -ItemType Directory -Force
+   
+   # Share the folder (requires admin privileges)
+   New-SmbShare -Name "PolygonShare" -Path "C:\PolygonShare" -FullAccess Everyone
+   ```
+
+2. Create the add-in folder and copy the manifest:
+   ```powershell
+   # Create add-in folder
+   New-Item -Path "C:\PolygonShare\Polygon" -ItemType Directory -Force
+   
+   # Copy manifest to the shared folder
+   Copy-Item -Path ".\manifest.xml" -Destination "C:\PolygonShare\Polygon\"
+   ```
+
+3. In Excel, go to **File** > **Options** > **Trust Center** > **Trust Center Settings** > **Trusted Add-in Catalogs**
+4. Add the network path to your shared folder (e.g., `\\localhost\PolygonShare\Polygon`)
+5. Check the "Show in Menu" option and click **OK**
+6. Restart Excel
+7. Go to **Insert** tab > **Add-ins** > **My Add-ins**
+8. Select the "Shared Folder" tab, and you should see your add-in
+
 ### For Excel Online
 1. Open Excel Online and create a new workbook
-2. Go to **Insert** tab > **Add-ins** > **Manage My Add-ins** > **Upload My Add-in**
-3. Browse to and select the `manifest.xml` file
+2. Go to **Insert** tab > **Office Add-ins**
+3. Select **Upload My Add-in** at the bottom of the dialog
+4. Browse to and select the `manifest.xml` file
+5. Click **Upload**
 
 ## Using the Add-in
 
@@ -81,11 +111,26 @@ This Excel add-in integrates with Polygon.io API to fetch financial data directl
 4. Update the manifest.xml to point to your production URL
 5. Distribute the manifest.xml file to users
 
-## Troubleshooting
+## Troubleshooting (Windows)
 
-* If the add-in doesn't load, check browser console for errors
+* If the add-in doesn't load, check browser console for errors (press F12 in Excel Online)
 * Ensure your Polygon.io API key has been set
 * Verify the dev server is running on https://localhost:3000
+* Check Windows Firewall settings if connecting from another device
+* PowerShell commands may require elevated permissions:
+  ```powershell
+  # Run PowerShell as Administrator
+  Start-Process powershell -Verb RunAs
+  ```
+* If you see certificate errors:
+  ```powershell
+  # Reinstall development certificates
+  npx office-addin-dev-certs install --machine
+  ```
+* Verify the manifest is correctly formatted using the validator:
+  ```powershell
+  npm run validate
+  ```
 
 ## Resources
 
