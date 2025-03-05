@@ -6,77 +6,78 @@ Office.onReady(() => {
   // Define custom functions with signature and example formula
   const customFunctions = [
     {
-      signature: "=POLYGON.getTickerDetails(ticker, [property])",
-      example: '=POLYGON.getTickerDetails("AAPL")',
-      description: "Gets details for a specific ticker from Polygon.io"
-    },
-    {
-      signature: "=POLYGON.getTickerNews(ticker, [limit])",
-      example: '=POLYGON.getTickerNews("AAPL", 5)',
-      description: "Retrieves news articles for a specific stock ticker"
-    },
-    {
-      signature: "=POLYGON.getLatestPrice(ticker, [property])",
-      example: '=POLYGON.getLatestPrice("AAPL")',
-      description: "Retrieves the latest stock price data for a ticker"
-    },
-    {
-      signature: "=POLYGON.getMarketStatus([market])",
-      example: '=POLYGON.getMarketStatus("us")',
-      description: "Gets the current market status from Polygon.io"
-    },
-    {
-      signature: "=POLYGON.getDividends(ticker, [limit])",
+      signature: "getDividends(ticker, [limit])",
       example: '=POLYGON.getDividends("AAPL", 4)',
       description: "Retrieves dividend information for a ticker"
     },
     {
-      signature: "=POLYGON.getTechnicalIndicator(ticker, indicator, [period], [from], [to])",
-      example: '=POLYGON.getTechnicalIndicator("AAPL", "SMA", 14)',
-      description: "Calculates technical indicators for a stock"
-    },
-    {
-      signature: "=POLYGON.searchTickers(searchTerm, [limit])",
-      example: '=POLYGON.searchTickers("Apple", 10)',
-      description: "Searches for tickers matching a search term"
-    },
-    {
-      signature: "=POLYGON.getStockSplits(ticker, [limit])",
-      example: '=POLYGON.getStockSplits("AAPL", 5)',
-      description: "Retrieves stock splits history for a ticker"
-    },
-    {
-      signature: "=POLYGON.getHistoricalOHLC(ticker, fromDate, toDate, [timespan])",
-      example: '=POLYGON.getHistoricalOHLC("AAPL", "2023-01-01", "2023-12-31", "day")',
-      description: "Retrieves historical OHLC data for a specific date range"
-    },
-    {
-      signature: "=POLYGON.getExchanges([exchangeType])",
+      signature: "getExchanges([exchangeType])",
       example: '=POLYGON.getExchanges("exchange")',
       description: "Retrieves information about stock exchanges"
     },
     {
-      signature: "=POLYGON.getMarketHolidays([year])",
+      signature: "getHistoricalOHLC(ticker, fromDate, toDate, [timespan])",
+      example: '=POLYGON.getHistoricalOHLC("AAPL", "2023-01-01", "2023-12-31", "day")',
+      description: "Retrieves historical OHLC data for a specific date range"
+    },
+    {
+      signature: "getLatestPrice(ticker, [property])",
+      example: '=POLYGON.getLatestPrice("AAPL")',
+      description: "Retrieves the latest stock price data for a ticker"
+    },
+    {
+      signature: "getMarketHolidays([year])",
       example: '=POLYGON.getMarketHolidays(2025)',
       description: "Gets upcoming market holidays and trading hours"
     },
     {
-      signature: "=POLYGON.getSectorPerformance([timespan])",
+      signature: "getMarketStatus([market])",
+      example: '=POLYGON.getMarketStatus("us")',
+      description: "Gets the current market status from Polygon.io"
+    },
+    {
+      signature: "getPortfolioSummary(portfolioData)",
+      example: '=POLYGON.getPortfolioSummary(A1:B10)',
+      description: "Creates a simple portfolio tracker with current values and returns"
+    },
+    {
+      signature: "getSectorPerformance([timespan])",
       example: '=POLYGON.getSectorPerformance("week")',
       description: "Analyzes and compares performance of major market sectors"
     },
     {
-      signature: "=POLYGON.getStockCorrelation(ticker1, ticker2, [days])",
+      signature: "getStockCorrelation(ticker1, ticker2, [days])",
       example: '=POLYGON.getStockCorrelation("AAPL", "MSFT", 30)',
       description: "Calculates correlation between two stocks over a period"
     },
     {
-      signature: "=POLYGON.getPortfolioSummary(portfolioData)",
-      example: '=POLYGON.getPortfolioSummary(A1:B10)',
-      description: "Creates a simple portfolio tracker with current values and returns"
+      signature: "getStockSplits(ticker, [limit])",
+      example: '=POLYGON.getStockSplits("AAPL", 5)',
+      description: "Retrieves stock splits history for a ticker"
+    },
+    {
+      signature: "getTechnicalIndicator(ticker, indicator, [period], [from], [to])",
+      example: '=POLYGON.getTechnicalIndicator("AAPL", "SMA", 14)',
+      description: "Calculates technical indicators for a stock"
+    },
+    {
+      signature: "getTickerDetails(ticker, [property])",
+      example: '=POLYGON.getTickerDetails("AAPL")',
+      description: "Gets details for a specific ticker from Polygon.io"
+    },
+    {
+      signature: "getTickerNews(ticker, [limit])",
+      example: '=POLYGON.getTickerNews("AAPL", 5)',
+      description: "Retrieves news articles for a specific stock ticker"
+    },
+    {
+      signature: "searchTickers(searchTerm, [limit])",
+      example: '=POLYGON.searchTickers("Apple", 10)',
+      description: "Searches for tickers matching a search term"
     }
   ];
 
+  
   // Populate the functions list
   const functionsList = document.getElementById("functions-list");
   customFunctions.forEach(func => {

@@ -2,6 +2,8 @@
 
 This Excel add-in integrates with Polygon.io API to fetch financial data directly into your spreadsheets.
 
+[Click to Watch](https://streamable.com/z5hydz)
+
 ## Features
 
 * `=POLYGON.getTickerDetails("AAPL")` - Get ticker details (name, market)
