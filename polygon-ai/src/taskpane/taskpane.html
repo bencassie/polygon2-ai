@@ -21,8 +21,13 @@
         <!-- API Key Section -->
         <section id="api-key-section">
             <h2 class="ms-font-xl">Set API Key</h2>
-            <input type="text" id="apiKeyInput" placeholder="Enter your Polygon.io API key">
-            <button id="setApiKey" class="ms-Button ms-Button--primary">Save API Key</button>
+            <div id="apiKeyInputContainer">
+                <input type="text" id="apiKeyInput" placeholder="Enter your Polygon.io API key">
+                <button id="setApiKey" class="ms-Button ms-Button--primary">Save API Key</button>
+            </div>
+            <div id="apiKeySet" style="display: none;">
+                <p>API key is set. <button id="changeApiKey" class="ms-Button ms-Button--primary">Change API Key</button></p>
+            </div>
             <p id="apiKeyStatus" class="ms-font-m"></p>
         </section>
         <!-- Custom Functions Section -->
