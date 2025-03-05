@@ -1,87 +1,93 @@
 # Polygon.io Excel Add-in
 
-Welcome to the Polygon.io Excel Add-in project! This add-in allows you to create custom Excel functions using JavaScript to fetch real-time financial data from Polygon.io directly into your spreadsheets.
-
-## Project Overview
-
-This project provides an Excel add-in that integrates with the Polygon.io API to retrieve stock ticker details and news articles. It uses Office.js and modern JavaScript development tools to extend Excel's capabilities.
+This Excel add-in integrates with Polygon.io API to fetch financial data directly into your spreadsheets.
 
 ## Features
 
-* Fetch ticker details (e.g., company name, market) using `=POLYGON.getTickerDetails()`
-* Retrieve news articles for a specific ticker with `=POLYGON.getTickerNews()`
-* User-friendly task pane to set your Polygon.io API key and insert functions
-* Built with modern JavaScript and TypeScript for reliability and maintainability
+* `=POLYGON.getTickerDetails("AAPL")` - Get ticker details (name, market)
+* `=POLYGON.getTickerNews("AAPL", 5)` - Get latest news articles
 
 ## Prerequisites
 
-* Node.js (version 14 or higher recommended)
-* npm (included with Node.js)
-* Microsoft Excel (Desktop or Online version supporting Office Add-ins)
-* A Polygon.io API key (sign up at https://polygon.io/)
+* Node.js (v14+) and npm
+* Microsoft Excel (Desktop or Online)
+* [Polygon.io API key](https://polygon.io/)
 
-## Installation
+## Setup & Installation
 
-1. Clone the repository: `git clone https://github.com/OfficeDev/Excel-Custom-Functions-JS.git`
-2. Navigate to the project directory: `cd polygon-ai`
-3. Install dependencies: `npm install`
-4. Build the project: `npm run build`
+1. **Clone & Install**
+   ```bash
+   git clone https://github.com/yourusername/polygon-ai.git
+   cd polygon-ai
+   npm install
+   ```
 
-## Development Setup
+2. **Get Development Certificates**
+   ```bash
+   npx office-addin-dev-certs install
+   ```
 
-1. Start the development server: `npm run dev-server`
-2. Sideload the add-in into Excel:
-   * Open Excel and create a new workbook
-   * Follow the instructions at https://learn.microsoft.com/office/dev/add-ins/testing/test-debug-office-add-ins#sideload-an-office-add-in-for-testing
-   * Use the manifest.xml file in the project root
-3. Open the task pane via the Home tab and set your Polygon.io API key
+3. **Build the Project**
+   ```bash
+   npm run build
+   ```
 
-## Usage
+4. **Start Development Server**
+   ```bash
+   npm run dev-server
+   ```
 
-* Use `=POLYGON.getTickerDetails("AAPL")` to get ticker details for Apple Inc.
-* Use `=POLYGON.getTickerNews("AAPL", 5)` to fetch the latest 5 news articles for AAPL
-* Access the task pane from the Home tab to manage your API key or insert sample formulas
+## Sideload the Add-in
 
-## Building for Production
+### For Excel Desktop
+1. Open Excel and a blank workbook
+2. Go to **Insert** tab > **Add-ins** > **My Add-ins** > **Manage My Add-ins** > **Upload My Add-in**
+3. Browse to the project folder and select `manifest.xml`
 
-1. Build the production version: `npm run build`
-2. Update the manifest.xml to point to your production URL (replace https://localhost:3000/ with your deployed URL)
-3. Deploy the built files (dist folder) to your web server
+### For Excel Online
+1. Open Excel Online and create a new workbook
+2. Go to **Insert** tab > **Add-ins** > **Manage My Add-ins** > **Upload My Add-in**
+3. Browse to and select the `manifest.xml` file
 
-## Scripts
+## Using the Add-in
 
-* `npm run build`: Build the project for production
-* `npm run build:dev`: Build for development
-* `npm run dev-server`: Start the development server
-* `npm run start`: Start debugging in Excel Desktop
-* `npm run stop`: Stop debugging
-* `npm run lint`: Check for linting issues
-* `npm run lint:fix`: Fix auto-fixable linting issues
+1. After sideloading, the add-in appears in the Home tab
+2. Click the add-in button to open the task pane
+3. Set your Polygon.io API key in the task pane
+4. Use the custom functions in your spreadsheet:
+   * `=POLYGON.getTickerDetails("AAPL")`
+   * `=POLYGON.getTickerNews("AAPL", 5)`
 
-## Dependencies
+## Development Commands
 
-* core-js: Polyfills for older browsers
-* regenerator-runtime: Runtime for async/await support
-* See package.json for a full list of dependencies and devDependencies
+* `npm run build` - Build for production
+* `npm run build:dev` - Build for development
+* `npm run dev-server` - Start dev server
+* `npm run start` - Build and start debugging
+* `npm run validate` - Validate the manifest file
+* `npm run lint` - Check for linting issues
 
-## Contributing
+## Project Structure
 
-This project follows the Microsoft Open Source Code of Conduct. For details, see CODE_OF_CONDUCT.md. To contribute:
+* `/src/functions/` - Custom Excel functions implementation
+* `/src/taskpane/` - Task pane UI code
+* `manifest.xml` - Add-in configuration file
 
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
+## Deployment
 
-## Support
+1. Update `webpack.config.js` to replace development URL with your production URL
+2. Build the project: `npm run build`
+3. Host the files from the `/dist` folder on your web server
+4. Update the manifest.xml to point to your production URL
+5. Distribute the manifest.xml file to users
 
-For issues or questions, please file a GitHub Issue at https://github.com/OfficeDev/Excel-Custom-Functions-JS/issues. Support is limited to the GitHub Issues platform.
+## Troubleshooting
 
-## License
+* If the add-in doesn't load, check browser console for errors
+* Ensure your Polygon.io API key has been set
+* Verify the dev server is running on https://localhost:3000
 
-This project is licensed under the MIT License. See the repository for full license details.
+## Resources
 
-## Additional Resources
-
-* Office Add-ins Documentation: https://learn.microsoft.com/office/dev/add-ins/
-* Polygon.io API Documentation: https://polygon.io/docs/
-* Project Repository: https://github.com/OfficeDev/Excel-Custom-Functions-JS
+* [Office Add-ins Documentation](https://learn.microsoft.com/office/dev/add-ins/)
+* [Polygon.io API Documentation](https://polygon.io/docs/)
