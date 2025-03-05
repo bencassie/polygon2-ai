@@ -6,6 +6,624 @@ function getApiKey() {
   return apiKey || localStorage.getItem("polygonApiKey");
 }
 
+
+/**
+ * Sets the Polygon.io API key for use in all functions.
+ * @customfunction
+ * @param {string} key The Polygon.io API key.
+ * @returns {string} Confirmation message.
+ */
+export function setPolygonApiKey(key) {
+  try {
+    if (!key) {
+      return "No API key provided.";
+    }
+    
+    apiKey = key;
+    localStorage.setItem("polygonApiKey", key);
+    return "API key set successfully.";
+  } catch (error) {
+    return `Error setting API key: ${error.message}`;
+  }
+}
+
+/****************************************************************************/
+
+/**
+ * Searches for tickers matching a search term
+ * @customfunction
+ * @param {string} searchTerm Text to search for (e.g., "Apple", "Tech", "Bank")
+ * @param {number} [limit=10] Maximum number of results to return
+ * @returns {Promise<string[][]>} Array of matching tickers and their details
+ */
+export async function searchTickers(searchTerm, limit = 10) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return [["API key not set. Please set your Polygon.io API key."]];
+    }
+
+    limit = Math.min(Math.max(1, limit), 50); // Ensure limit is between 1 and 50
+    const url = `https://api.polygon.io/v3/reference/tickers?search=${encodeURIComponent(searchTerm)}&active=true&limit=${limit}&apiKey=${apiKey}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      return [[`HTTP error! status: ${response.status}`]];
+    }
+
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      // Create header row
+      const results = [["Symbol", "Name", "Market", "Type", "Primary Exchange"]];
+      
+      // Data rows
+      data.results.forEach(ticker => {
+        results.push([
+          ticker.ticker || "N/A",
+          ticker.name || "N/A",
+          ticker.market || "N/A",
+          ticker.type || "N/A",
+          ticker.primary_exchange || "N/A"
+        ]);
+      });
+      
+      return results;
+    } else {
+      return [["No matching tickers found."]];
+    }
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves stock splits history for a ticker
+ * @customfunction
+ * @param {string} ticker The stock ticker symbol (e.g., "AAPL")
+ * @param {number} [limit=10] Maximum number of splits to return
+ * @returns {Promise<string[][]>} Array of stock split data
+ */
+export async function getStockSplits(ticker, limit = 10) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return [["API key not set. Please set your Polygon.io API key."]];
+    }
+
+    limit = Math.min(Math.max(1, limit), 50);
+    const url = `https://api.polygon.io/v3/reference/splits?ticker=${ticker}&limit=${limit}&apiKey=${apiKey}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      return [[`HTTP error! status: ${response.status}`]];
+    }
+
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      // Create header row
+      const results = [["Ticker", "Ex-Date", "Payment Date", "Ratio", "To Factor", "From Factor"]];
+      
+      // Data rows
+      data.results.forEach(split => {
+        results.push([
+          split.ticker || "N/A",
+          split.execution_date || "N/A",
+          split.payment_date || "N/A",
+          `${split.split_to}:${split.split_from}`,
+          split.split_to || "N/A",
+          split.split_from || "N/A"
+        ]);
+      });
+      
+      return results;
+    } else {
+      return [["No stock splits found for this ticker."]];
+    }
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves historical OHLC data for a specific date range
+ * @customfunction
+ * @param {string} ticker The stock ticker symbol (e.g., "AAPL")
+ * @param {string} fromDate Start date in YYYY-MM-DD format
+ * @param {string} toDate End date in YYYY-MM-DD format
+ * @param {string} [timespan="day"] Timespan between data points ("day", "week", "month", "quarter", "year")
+ * @returns {Promise<string[][]>} Array of OHLC data
+ */
+export async function getHistoricalOHLC(ticker, fromDate, toDate, timespan = "day") {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return [["API key not set. Please set your Polygon.io API key."]];
+    }
+
+    // Validate dates
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fromDate) || !/^\d{4}-\d{2}-\d{2}$/.test(toDate)) {
+      return [["Date format must be YYYY-MM-DD"]];
+    }
+
+    // Validate timespan
+    const validTimespans = ["day", "week", "month", "quarter", "year"];
+    if (!validTimespans.includes(timespan)) {
+      return [[`Invalid timespan. Valid options are: ${validTimespans.join(", ")}`]];
+    }
+
+    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/${timespan}/${fromDate}/${toDate}?adjusted=true&sort=asc&apiKey=${apiKey}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      return [[`HTTP error! status: ${response.status}`]];
+    }
+
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      // Create header row
+      const results = [["Date", "Open", "High", "Low", "Close", "Volume", "VWAP"]];
+      
+      // Data rows
+      data.results.forEach(bar => {
+        // Convert timestamp to date
+        const date = new Date(bar.t);
+        const dateString = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        
+        results.push([
+          dateString,
+          bar.o?.toFixed(2) || "N/A", // Open
+          bar.h?.toFixed(2) || "N/A", // High
+          bar.l?.toFixed(2) || "N/A", // Low
+          bar.c?.toFixed(2) || "N/A", // Close
+          bar.v || "N/A", // Volume
+          bar.vw?.toFixed(2) || "N/A" // VWAP
+        ]);
+      });
+      
+      return results;
+    } else {
+      return [["No data found for this ticker and date range."]];
+    }
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves information about stock exchanges
+ * @customfunction
+ * @param {string} [exchangeType="exchange"] Type of exchange ("exchange", "otc", "index")
+ * @returns {Promise<string[][]>} Array of exchange information
+ */
+export async function getExchanges(exchangeType = "exchange") {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return [["API key not set. Please set your Polygon.io API key."]];
+    }
+
+    // Validate exchange type
+    const validTypes = ["exchange", "otc", "index"];
+    if (!validTypes.includes(exchangeType)) {
+      return [[`Invalid exchange type. Valid options are: ${validTypes.join(", ")}`]];
+    }
+
+    const url = `https://api.polygon.io/v3/reference/exchanges?asset_class=stocks&apiKey=${apiKey}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      return [[`HTTP error! status: ${response.status}`]];
+    }
+
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      // Filter exchanges by type
+      const filteredExchanges = data.results.filter(exchange => 
+        exchangeType === "exchange" ? !exchange.type.includes("otc") && !exchange.type.includes("index") :
+        exchange.type.includes(exchangeType)
+      );
+
+      if (filteredExchanges.length === 0) {
+        return [[`No ${exchangeType} exchanges found.`]];
+      }
+
+      // Create header row
+      const results = [["Name", "Market Identifier Code (MIC)", "Type", "Market", "Country", "Operating MIC"]];
+      
+      // Data rows
+      filteredExchanges.forEach(exchange => {
+        results.push([
+          exchange.name || "N/A",
+          exchange.mic || "N/A",
+          exchange.type || "N/A",
+          exchange.market || "N/A",
+          exchange.locale || "N/A",
+          exchange.operating_mic || "N/A"
+        ]);
+      });
+      
+      return results;
+    } else {
+      return [["No exchanges found."]];
+    }
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+/**
+ * Gets upcoming market holidays and trading hours
+ * @customfunction
+ * @param {number} [year=current] The year to get holidays for
+ * @returns {Promise<string[][]>} Array of market holidays and status
+ */
+export async function getMarketHolidays(year) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return [["API key not set. Please set your Polygon.io API key."]];
+    }
+
+    // Default to current year if not specified
+    if (!year) {
+      year = new Date().getFullYear();
+    }
+    
+    const url = `https://api.polygon.io/v1/marketstatus/upcoming?apiKey=${apiKey}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      return [[`HTTP error! status: ${response.status}`]];
+    }
+
+    const holidays = await response.json();
+    if (holidays && holidays.length > 0) {
+      // Filter by year if specified
+      const filteredHolidays = holidays.filter(holiday => {
+        const holidayDate = new Date(holiday.date);
+        return holidayDate.getFullYear() === year;
+      });
+
+      if (filteredHolidays.length === 0) {
+        return [[`No market holidays found for ${year}.`]];
+      }
+
+      // Create header row
+      const results = [["Date", "Holiday", "Status", "Open", "Close"]];
+      
+      // Data rows
+      filteredHolidays.forEach(holiday => {
+        const date = new Date(holiday.date).toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        
+        results.push([
+          date,
+          holiday.name || "N/A",
+          holiday.status || "N/A",
+          holiday.open || "Closed",
+          holiday.close || "Closed"
+        ]);
+      });
+      
+      return results;
+    } else {
+      return [["No market holidays found."]];
+    }
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+/**
+ * Analyzes and compares performance of major market sectors
+ * @customfunction
+ * @param {string} [timespan="day"] Time period to analyze ("day", "week", "month", "quarter", "year")
+ * @returns {Promise<string[][]>} Array of sector performance data
+ */
+export async function getSectorPerformance(timespan = "day") {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return [["API key not set. Please set your Polygon.io API key."]];
+    }
+
+    // Define sector ETFs to track performance
+    const sectorETFs = {
+      "Technology": "XLK",
+      "Financial": "XLF",
+      "Healthcare": "XLV",
+      "Consumer Discretionary": "XLY",
+      "Consumer Staples": "XLP",
+      "Energy": "XLE",
+      "Materials": "XLB",
+      "Industrial": "XLI",
+      "Utilities": "XLU",
+      "Real Estate": "XLRE",
+      "Communication": "XLC"
+    };
+
+    // Get S&P 500 for comparison
+    const spyTicker = "SPY";
+
+    // Prepare date range based on timespan
+    const endDate = new Date();
+    const startDate = new Date();
+    
+    switch(timespan) {
+      case "day":
+        startDate.setDate(startDate.getDate() - 1);
+        break;
+      case "week":
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case "month":
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+      case "quarter":
+        startDate.setMonth(startDate.getMonth() - 3);
+        break;
+      case "year":
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(startDate.getDate() - 1);
+    }
+
+    const fromDate = startDate.toISOString().split('T')[0];
+    const toDate = endDate.toISOString().split('T')[0];
+
+    // Get S&P 500 performance for benchmark
+    const spyUrl = `https://api.polygon.io/v2/aggs/ticker/${spyTicker}/range/1/day/${fromDate}/${toDate}?adjusted=true&sort=asc&apiKey=${apiKey}`;
+    const spyResponse = await fetch(spyUrl);
+    
+    if (!spyResponse.ok) {
+      return [[`HTTP error! status: ${spyResponse.status}`]];
+    }
+    
+    const spyData = await spyResponse.json();
+    if (!spyData.results || spyData.results.length < 2) {
+      return [["Insufficient S&P 500 data for the selected timespan."]];
+    }
+
+    // Calculate S&P 500 performance
+    const spyStartPrice = spyData.results[0].c;
+    const spyEndPrice = spyData.results[spyData.results.length - 1].c;
+    const spyPerformance = ((spyEndPrice / spyStartPrice) - 1) * 100;
+
+    // Prepare results array
+    const results = [["Sector", "Performance (%)", "Relative to S&P 500", "Ticker"]];
+    
+    // Fetch data for each sector ETF
+    for (const [sector, ticker] of Object.entries(sectorETFs)) {
+      try {
+        const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${fromDate}/${toDate}?adjusted=true&sort=asc&apiKey=${apiKey}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          results.push([sector, "Error", "Error", ticker]);
+          continue;
+        }
+        
+        const data = await response.json();
+        if (!data.results || data.results.length < 2) {
+          results.push([sector, "Insufficient data", "N/A", ticker]);
+          continue;
+        }
+        
+        const startPrice = data.results[0].c;
+        const endPrice = data.results[data.results.length - 1].c;
+        const performance = ((endPrice / startPrice) - 1) * 100;
+        const relativePerformance = performance - spyPerformance;
+        
+        results.push([
+          sector,
+          performance.toFixed(2) + "%",
+          (relativePerformance > 0 ? "+" : "") + relativePerformance.toFixed(2) + "%",
+          ticker
+        ]);
+      } catch (error) {
+        results.push([sector, `Error: ${error.message}`, "N/A", ticker]);
+      }
+    }
+    
+    // Sort by performance (descending)
+    results.sort((a, b) => {
+      // Skip header row
+      if (a[0] === "Sector") return -1;
+      if (b[0] === "Sector") return 1;
+      
+      // Parse percentages for sorting
+      const aPerf = parseFloat(a[1]);
+      const bPerf = parseFloat(b[1]);
+      
+      return isNaN(aPerf) || isNaN(bPerf) ? 0 : bPerf - aPerf;
+    });
+    
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Calculates correlation between two stocks over a period
+ * @customfunction
+ * @param {string} ticker1 First ticker symbol
+ * @param {string} ticker2 Second ticker symbol
+ * @param {number} [days=30] Number of trading days to analyze
+ * @returns {Promise<number>} Correlation coefficient (-1 to 1)
+ */
+export async function getStockCorrelation(ticker1, ticker2, days = 30) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return "API key not set. Please set your Polygon.io API key.";
+    }
+
+    // Limit days to a reasonable range
+    days = Math.min(Math.max(5, days), 365);
+
+    // Calculate date range
+    const endDate = new Date();
+    const startDate = new Date();
+    // Add buffer days to ensure we get enough trading days
+    startDate.setDate(startDate.getDate() - (days * 2)); 
+    
+    const fromDate = startDate.toISOString().split('T')[0];
+    const toDate = endDate.toISOString().split('T')[0];
+
+    // Fetch data for both tickers
+    const responses = await Promise.all([
+      fetch(`https://api.polygon.io/v2/aggs/ticker/${ticker1}/range/1/day/${fromDate}/${toDate}?adjusted=true&sort=asc&apiKey=${apiKey}`),
+      fetch(`https://api.polygon.io/v2/aggs/ticker/${ticker2}/range/1/day/${fromDate}/${toDate}?adjusted=true&sort=asc&apiKey=${apiKey}`)
+    ]);
+
+    if (!responses[0].ok || !responses[1].ok) {
+      return `HTTP error! status: ${responses[0].status || responses[1].status}`;
+    }
+
+    const data = await Promise.all([
+      responses[0].json(),
+      responses[1].json()
+    ]);
+
+    if (!data[0].results || !data[1].results || 
+        data[0].results.length < days || data[1].results.length < days) {
+      return "Insufficient price data for correlation calculation.";
+    }
+
+    // Take the most recent 'days' days of data
+    const prices1 = data[0].results.slice(-days).map(bar => bar.c);
+    const prices2 = data[1].results.slice(-days).map(bar => bar.c);
+
+    // Calculate daily returns
+    const returns1 = [];
+    const returns2 = [];
+    
+    for (let i = 1; i < prices1.length; i++) {
+      returns1.push((prices1[i] / prices1[i-1]) - 1);
+      returns2.push((prices2[i] / prices2[i-1]) - 1);
+    }
+
+    // Calculate correlation coefficient
+    const correlation = calculateCorrelation(returns1, returns2);
+    return parseFloat(correlation.toFixed(4)); // Return as number with 4 decimal places
+  } catch (error) {
+    return `Error: ${error.message}`;
+  }
+}
+
+/**
+ * Calculates Pearson correlation coefficient between two arrays
+ * @private
+ * @param {number[]} x First array
+ * @param {number[]} y Second array
+ * @returns {number} Correlation coefficient
+ */
+function calculateCorrelation(x, y) {
+  const n = x.length;
+  
+  // Calculate means
+  const xMean = x.reduce((a, b) => a + b, 0) / n;
+  const yMean = y.reduce((a, b) => a + b, 0) / n;
+  
+  // Calculate sums for correlation formula
+  let numerator = 0;
+  let xDenom = 0;
+  let yDenom = 0;
+  
+  for (let i = 0; i < n; i++) {
+    const xDiff = x[i] - xMean;
+    const yDiff = y[i] - yMean;
+    numerator += xDiff * yDiff;
+    xDenom += xDiff * xDiff;
+    yDenom += yDiff * yDiff;
+  }
+  
+  const denominator = Math.sqrt(xDenom * yDenom);
+  
+  return denominator === 0 ? 0 : numerator / denominator;
+}
+/**
+ * Creates a simple portfolio tracker with current values and returns
+ * @customfunction
+ * @param {string[][]} portfolioData 2D array of [ticker, shares]
+ * @returns {Promise<string[][]>} Portfolio summary with current value and performance
+ */
+export async function getPortfolioSummary(portfolioData) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return [["API key not set. Please set your Polygon.io API key."]];
+    }
+
+    if (!Array.isArray(portfolioData) || portfolioData.length === 0) {
+      return [["Invalid portfolio data. Expected format: [[ticker, shares], ...]"]];
+    }
+
+    // Create header row
+    const results = [["Symbol", "Shares", "Current Price", "Market Value", "Day Change %"]];
+    let totalValue = 0;
+    
+    // Process each position
+    for (const position of portfolioData) {
+      if (!Array.isArray(position) || position.length < 2) {
+        results.push(["Invalid position", "N/A", "N/A", "N/A", "N/A"]);
+        continue;
+      }
+      
+      const [ticker, sharesInput] = position;
+      const shares = parseFloat(sharesInput);
+      
+      if (isNaN(shares)) {
+        results.push([ticker, "Invalid", "N/A", "N/A", "N/A"]);
+        continue;
+      }
+      
+      try {
+        const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apiKey=${apiKey}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          results.push([ticker, shares, "Error", "Error", "Error"]);
+          continue;
+        }
+        
+        const data = await response.json();
+        if (!data.results || data.results.length === 0) {
+          results.push([ticker, shares, "No data", "N/A", "N/A"]);
+          continue;
+        }
+        
+        const priceData = data.results[0];
+        const currentPrice = priceData.c;
+        const previousClose = priceData.o; // Using open price as previous reference
+        const marketValue = currentPrice * shares;
+        const dayChange = ((currentPrice / previousClose) - 1) * 100;
+        
+        totalValue += marketValue;
+        
+        results.push([
+          ticker,
+          shares.toString(),
+          "$" + currentPrice.toFixed(2),
+          "$" + marketValue.toFixed(2),
+          (dayChange > 0 ? "+" : "") + dayChange.toFixed(2) + "%"
+        ]);
+      } catch (error) {
+        results.push([ticker, shares, `Error: ${error.message}`, "N/A", "N/A"]);
+      }
+    }
+    
+    // Add total row
+    results.push(["Total", "", "", "$" + totalValue.toFixed(2), ""]);
+    
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+
+
+
 /**
  * Gets a specific ticker detail from Polygon.io.
  * @customfunction
@@ -158,26 +776,6 @@ export async function getMarketStatus(market = "us") {
   }
 }
 
-
-/**
- * Sets the Polygon.io API key for use in all functions.
- * @customfunction
- * @param {string} key The Polygon.io API key.
- * @returns {string} Confirmation message.
- */
-export function setPolygonApiKey(key) {
-  try {
-    if (!key) {
-      return "No API key provided.";
-    }
-    
-    apiKey = key;
-    localStorage.setItem("polygonApiKey", key);
-    return "API key set successfully.";
-  } catch (error) {
-    return `Error setting API key: ${error.message}`;
-  }
-}
 
 /**
  * Retrieves dividend information for a ticker from Polygon.io.
