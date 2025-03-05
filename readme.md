@@ -1,6 +1,6 @@
 # Polygon.io Excel Add-in
 
-This Excel add-in integrates with Polygon.io API to fetch financial data directly into your spreadsheets.
+This Excel add-in integrates with [Polygon.io API](https://polygon.io/) to fetch financial data directly into your spreadsheets.
 
 This add-in was built 100% by Grok 3 and Claude 3.7 Sonnet.
 
