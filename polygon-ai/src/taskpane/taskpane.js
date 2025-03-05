@@ -1,34 +1,25 @@
-/*
- * Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT license.
- * See LICENSE in the project root for license information.
- */
-
 /* global console, document, Excel, Office */
 
-// The initialize function must be run each time a new page is loaded
 Office.onReady(() => {
   document.getElementById("sideload-msg").style.display = "none";
   document.getElementById("app-body").style.display = "flex";
   document.getElementById("run").onclick = run;
   document.getElementById("setApiKey").onclick = setApiKey;
+
+  // Prefill API key if saved
+  const savedKey = localStorage.getItem("polygonApiKey");
+  if (savedKey) {
+    document.getElementById("apiKeyInput").value = savedKey;
+  }
 });
 
 export async function run() {
   try {
     await Excel.run(async (context) => {
-      /**
-       * Insert your Excel code here
-       */
-      const range = context.workbook.getSelectedRange();
-
-      // Read the range address
-      range.load("address");
-
-      // Update the fill color
-      range.format.fill.color = "yellow";
-
+      const activeCell = context.workbook.getActiveCell();
+      activeCell.formulas = [["=POLYGON.getTickerDetails(\"AAPL\")"]];
       await context.sync();
-      console.log(`The range address was ${range.address}.`);
+      console.log("Inserted example formula in active cell.");
     });
   } catch (error) {
     console.error(error);
@@ -38,15 +29,16 @@ export async function run() {
 let apiKey = "";
 
 export async function setApiKey() {
-
   try {
     await Excel.run(async (context) => {
       const input = document.getElementById("apiKeyInput").value;
       apiKey = input;
-      localStorage.setItem("polygonApiKey", input); // Optional: persists across sessions
+      localStorage.setItem("polygonApiKey", input);
+      document.getElementById("apiKeyStatus").textContent = "API key saved successfully.";
       console.log("API key saved!");
     });
   } catch (error) {
     console.error(error);
+    document.getElementById("apiKeyStatus").textContent = "Error saving API key.";
   }
 }

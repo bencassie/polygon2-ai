@@ -46,6 +46,45 @@ export async function getTickerDetails(ticker, property) {
   }
 }
 
+
+/**
+ * Retrieves news articles for a specific stock ticker from Polygon.io.
+ * @customfunction
+ * @param {string} ticker The stock ticker symbol (e.g., "AAPL").
+ * @param {number} [limit=10] The maximum number of news articles to retrieve.
+ * @returns {Promise<string[][]>} A 2D array of news articles with title, description, and URL.
+ */
+export async function getTickerNews(ticker, limit = 10) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("API key not set. Please set your Polygon.io API key.");
+    }
+    limit = (limit && limit > 0) ? limit : 10;
+    const url = `https://api.polygon.io/v2/reference/news?ticker=${ticker}&limit=${limit}&apiKey=${apiKey}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.results && data.results.length > 0) {
+      const newsArticles = data.results.map(article => [
+        article.title || "N/A",
+        article.description || "N/A",
+        article.article_url || "N/A"
+      ]);
+      return newsArticles;
+    } else {
+      return [["No news articles found."]];
+    }
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+
 // /**
 //  * Add two numbers
 //  * @customfunction
