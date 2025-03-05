@@ -124,82 +124,6 @@ export async function getLatestPrice(ticker, property) {
 }
 
 /**
- * Retrieves historical stock price data for a specific ticker and timeframe.
- * @customfunction
- * @param {string} ticker The stock ticker symbol (e.g., "AAPL").
- * @param {string} multiplier The size of the timespan multiplier (e.g., "1", "5").
- * @param {string} timespan The timespan to use (e.g., "day", "minute", "hour", "week", "month", "quarter", "year").
- * @param {string} from The start date in YYYY-MM-DD format.
- * @param {string} to The end date in YYYY-MM-DD format.
- * @param {string} [dataType="all"] The type of data to return ("all", "close", "open", "high", "low", "volume").
- * @returns {Promise<number[][]|number[]|string>} A 2D array of price data or an array of values for a specific data type.
- */
-export async function getHistoricalPrices(ticker, multiplier, timespan, from, to, dataType = "all") {
-  try {
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      return "API key not set. Please set your Polygon.io API key.";
-    }
-
-    // Format validation for parameters
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
-      return "Date format must be YYYY-MM-DD";
-    }
-
-    // Check other parameters
-    if (!ticker || !multiplier || !timespan) {
-      return "Missing required parameters: ticker, multiplier, timespan";
-    }
-
-    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/${multiplier}/${timespan}/${from}/${to}?adjusted=true&sort=asc&limit=5000&apiKey=${apiKey}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      if (response.status === 403) {
-        return "Access forbidden: Check API key permissions or subscription tier";
-      } else if (response.status === 429) {
-        return "Rate limit exceeded: Try again later or upgrade your subscription";
-      }
-      return `HTTP error! status: ${response.status}`;
-    }
-
-    const data = await response.json();
-    if (data.results && data.results.length > 0) {
-      // Define property mappings for clarity
-      const propertyMap = {
-        "open": "o",
-        "high": "h",
-        "low": "l",
-        "close": "c",
-        "volume": "v"
-      };
-
-      // For a specific data type (not "all")
-      if (dataType !== "all" && propertyMap[dataType.toLowerCase()]) {
-        const property = propertyMap[dataType.toLowerCase()];
-        return data.results.map(bar => bar[property]);
-      } 
-      // Return all data as a 2D array: [timestamp, open, high, low, close, volume]
-      else if (dataType === "all") {
-        return data.results.map(bar => [
-          new Date(bar.t).toISOString().split('T')[0], // Format timestamp as YYYY-MM-DD
-          bar.o, // Open
-          bar.h, // High
-          bar.l, // Low
-          bar.c, // Close
-          bar.v  // Volume
-        ]);
-      } else {
-        return "Invalid data type specified.";
-      }
-    } else {
-      return "No historical data found.";
-    }
-  } catch (error) {
-    return `Error: ${error.message}`;
-  }
-}
-/**
  * Gets the market status from Polygon.io.
  * @customfunction
  * @param {string} [market="us"] The market to check (e.g., "us", "fx", "crypto").
@@ -228,65 +152,6 @@ export async function getMarketStatus(market = "us") {
       return data.exchanges[market.toLowerCase()] || "Status unknown";
     } else {
       return "Market not found or status unknown";
-    }
-  } catch (error) {
-    return `Error: ${error.message}`;
-  }
-}
-
-/**
- * Retrieves financial metrics for a ticker from Polygon.io.
- * @customfunction
- * @param {string} ticker The stock ticker symbol (e.g., "AAPL").
- * @param {string} [metric] Optional specific metric to return (e.g., "marketCapitalization", "peRatio").
- * @returns {Promise<number|string|number[][]>} The financial metrics or a specific metric.
- */
-export async function getFinancialMetrics(ticker, metric) {
-  try {
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      return "API key not set. Please set your Polygon.io API key.";
-    }
-
-    // Use ticker details endpoint as a fallback for some basic metrics
-    const url = `https://api.polygon.io/v3/reference/tickers/${ticker}?apiKey=${apiKey}`;
-    
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      return `Financial metrics not available (HTTP ${response.status}). This endpoint might require a higher subscription tier.`;
-    }
-
-    const data = await response.json();
-    if (data.results) {
-      const tickerDetails = data.results;
-      // Create a simplified metrics object from ticker details
-      const metrics = {
-        marketCap: tickerDetails.market_cap,
-        name: tickerDetails.name,
-        primaryExchange: tickerDetails.primary_exchange,
-        type: tickerDetails.type,
-        currency: tickerDetails.currency_name,
-        lastUpdated: tickerDetails.last_updated_utc
-      };
-      
-      if (metric) {
-        return metrics[metric] !== undefined ? metrics[metric] : "Metric not found.";
-      } else {
-        // Return a selection of common metrics as a 2D array
-        const metricsArray = [
-          ["Metric", "Value"],
-          ["Name", metrics.name || "N/A"],
-          ["Market Cap", metrics.marketCap || "N/A"],
-          ["Primary Exchange", metrics.primaryExchange || "N/A"],
-          ["Type", metrics.type || "N/A"],
-          ["Currency", metrics.currency || "N/A"],
-          ["Last Updated", metrics.lastUpdated || "N/A"]
-        ];
-        return metricsArray;
-      }
-    } else {
-      return "No financial metrics found.";
     }
   } catch (error) {
     return `Error: ${error.message}`;
@@ -515,9 +380,6 @@ export async function getTechnicalIndicator(ticker, indicator, period = 14, from
   }
 }
 
-// Helper functions for technical indicators - these remain the same
-// But with improved error handling
-
 /**
  * Calculates Simple Moving Average.
  * @param {number[]} prices Array of price data.
@@ -535,20 +397,17 @@ function calculateSMA(prices, period) {
   
   const result = [];
   
-  for (let i = 0; i < prices.length; i++) {
-    if (i < period - 1) {
-      result.push(null); // Not enough data yet
-    } else {
-      let sum = 0;
-      for (let j = 0; j < period; j++) {
-        const price = prices[i - j];
-        if (typeof price !== 'number' || isNaN(price)) {
-          throw new Error(`Invalid price at position ${i-j}: ${price}`);
-        }
-        sum += price;
+  // Start from the first complete period
+  for (let i = period - 1; i < prices.length; i++) {
+    let sum = 0;
+    for (let j = 0; j < period; j++) {
+      const price = prices[i - j];
+      if (typeof price !== 'number' || isNaN(price)) {
+        throw new Error(`Invalid price at position ${i-j}: ${price}`);
       }
-      result.push(sum / period);
+      sum += price;
     }
+    result.push(sum / period);
   }
   
   return result;
@@ -581,16 +440,12 @@ function calculateEMA(prices, period) {
   
   // First EMA is the SMA
   let ema = prices.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  result.push(ema);
   
-  for (let i = 0; i < prices.length; i++) {
-    if (i < period - 1) {
-      result.push(null); // Not enough data yet
-    } else if (i === period - 1) {
-      result.push(ema);
-    } else {
-      ema = (prices[i] - ema) * multiplier + ema;
-      result.push(ema);
-    }
+  // Calculate remaining EMAs starting from position 'period'
+  for (let i = period; i < prices.length; i++) {
+    ema = (prices[i] - ema) * multiplier + ema;
+    result.push(ema);
   }
   
   return result;
@@ -627,20 +482,17 @@ function calculateRSI(prices, period) {
     losses.push(change < 0 ? -change : 0);
   }
   
-  for (let i = 0; i < prices.length; i++) {
-    if (i <= period) {
-      result.push(null); // Not enough data yet
+  // Start calculating RSI after we have enough data
+  for (let i = period; i < gains.length; i++) {
+    // Calculate average gain and loss over the period
+    let avgGain = gains.slice(i - period, i).reduce((a, b) => a + b, 0) / period;
+    let avgLoss = losses.slice(i - period, i).reduce((a, b) => a + b, 0) / period;
+    
+    if (avgLoss === 0) {
+      result.push(100); // No losses means RSI = 100
     } else {
-      // Calculate average gain and loss over the period
-      let avgGain = gains.slice(i - period - 1, i - 1).reduce((a, b) => a + b, 0) / period;
-      let avgLoss = losses.slice(i - period - 1, i - 1).reduce((a, b) => a + b, 0) / period;
-      
-      if (avgLoss === 0) {
-        result.push(100); // No losses means RSI = 100
-      } else {
-        const rs = avgGain / avgLoss;
-        result.push(100 - (100 / (1 + rs)));
-      }
+      const rs = avgGain / avgLoss;
+      result.push(100 - (100 / (1 + rs)));
     }
   }
   
@@ -673,43 +525,43 @@ function calculateMACD(prices, fastPeriod, slowPeriod, signalPeriod) {
   }
   
   try {
+    // Calculate fast and slow EMAs
     const fastEMA = calculateEMA(prices, fastPeriod);
     const slowEMA = calculateEMA(prices, slowPeriod);
+    
+    // Since the EMAs will have different lengths, we need to align them
+    // The slow EMA will be shorter than the fast EMA
     const macdLine = [];
     
     // Calculate MACD line (fast EMA - slow EMA)
-    for (let i = 0; i < prices.length; i++) {
-      if (fastEMA[i] === null || slowEMA[i] === null) {
-        macdLine.push(null);
-      } else {
-        macdLine.push(fastEMA[i] - slowEMA[i]);
-      }
-    }
-    
-    // Filter out null values for EMA calculation
-    const validMacdLine = macdLine.filter(val => val !== null);
-    
-    if (validMacdLine.length <= signalPeriod) {
-      throw new Error("Insufficient data to calculate signal line");
+    // Skip first (slowPeriod - fastPeriod) elements of fastEMA to align with slowEMA
+    const offset = slowPeriod - fastPeriod;
+    for (let i = 0; i < slowEMA.length; i++) {
+      macdLine.push(fastEMA[i + offset] - slowEMA[i]);
     }
     
     // Calculate signal line (EMA of MACD line)
-    const signalLine = calculateEMA(validMacdLine, signalPeriod);
-    
-    // Fill in null values at the beginning of signal line to match length
-    const fullSignalLine = Array(prices.length - signalLine.length).fill(null).concat(signalLine);
-    
-    // Calculate histogram (MACD line - signal line)
-    const histogram = [];
-    for (let i = 0; i < prices.length; i++) {
-      if (macdLine[i] === null || fullSignalLine[i] === null) {
-        histogram.push(null);
-      } else {
-        histogram.push(macdLine[i] - fullSignalLine[i]);
-      }
+    // Only use macdLine with enough data points for signalPeriod
+    if (macdLine.length < signalPeriod) {
+      throw new Error("Insufficient data to calculate signal line");
     }
     
-    return [macdLine, fullSignalLine, histogram];
+    const signalLine = calculateEMA(macdLine, signalPeriod);
+    
+    // Calculate histogram (MACD line - signal line)
+    // Need to align macdLine with signalLine (signalLine will be shorter)
+    const histogram = [];
+    const histOffset = macdLine.length - signalLine.length;
+    
+    for (let i = 0; i < signalLine.length; i++) {
+      histogram.push(macdLine[i + histOffset] - signalLine[i]);
+    }
+    
+    // Return arrays of the same length by trimming to the shortest
+    const minLength = Math.min(histogram.length, signalLine.length);
+    const macdLineAligned = macdLine.slice(macdLine.length - minLength);
+    
+    return [macdLineAligned, signalLine.slice(0, minLength), histogram.slice(0, minLength)];
   } catch (error) {
     throw new Error(`MACD calculation error: ${error.message}`);
   }

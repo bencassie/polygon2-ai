@@ -21,11 +21,6 @@ Office.onReady(() => {
       description: "Retrieves the latest stock price data for a ticker"
     },
     {
-      signature: "=POLYGON.getHistoricalPrices(ticker, multiplier, timespan, from, to, [dataType])",
-      example: '=POLYGON.getHistoricalPrices("AAPL", "1", "day", "2023-01-01", "2023-01-31")',
-      description: "Retrieves historical stock price data for a specific timeframe"
-    },
-    {
       signature: "=POLYGON.getMarketStatus([market])",
       example: '=POLYGON.getMarketStatus("us")',
       description: "Gets the current market status from Polygon.io"
@@ -34,11 +29,6 @@ Office.onReady(() => {
       signature: "=POLYGON.getFinancialMetrics(ticker, [metric])",
       example: '=POLYGON.getFinancialMetrics("AAPL")',
       description: "Retrieves financial metrics for a ticker"
-    },
-    {
-      signature: "=POLYGON.getEarnings(ticker, [limit])",
-      example: '=POLYGON.getEarnings("AAPL", 4)',
-      description: "Retrieves company earnings data for a ticker"
     },
     {
       signature: "=POLYGON.getDividends(ticker, [limit])",
