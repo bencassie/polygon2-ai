@@ -34,6 +34,46 @@ Office.onReady(() => {
       signature: "=POLYGON.getTechnicalIndicator(ticker, indicator, [period], [from], [to])",
       example: '=POLYGON.getTechnicalIndicator("AAPL", "SMA", 14)',
       description: "Calculates technical indicators for a stock"
+    },
+    {
+      signature: "=POLYGON.searchTickers(searchTerm, [limit])",
+      example: '=POLYGON.searchTickers("Apple", 10)',
+      description: "Searches for tickers matching a search term"
+    },
+    {
+      signature: "=POLYGON.getStockSplits(ticker, [limit])",
+      example: '=POLYGON.getStockSplits("AAPL", 5)',
+      description: "Retrieves stock splits history for a ticker"
+    },
+    {
+      signature: "=POLYGON.getHistoricalOHLC(ticker, fromDate, toDate, [timespan])",
+      example: '=POLYGON.getHistoricalOHLC("AAPL", "2023-01-01", "2023-12-31", "day")',
+      description: "Retrieves historical OHLC data for a specific date range"
+    },
+    {
+      signature: "=POLYGON.getExchanges([exchangeType])",
+      example: '=POLYGON.getExchanges("exchange")',
+      description: "Retrieves information about stock exchanges"
+    },
+    {
+      signature: "=POLYGON.getMarketHolidays([year])",
+      example: '=POLYGON.getMarketHolidays(2025)',
+      description: "Gets upcoming market holidays and trading hours"
+    },
+    {
+      signature: "=POLYGON.getSectorPerformance([timespan])",
+      example: '=POLYGON.getSectorPerformance("week")',
+      description: "Analyzes and compares performance of major market sectors"
+    },
+    {
+      signature: "=POLYGON.getStockCorrelation(ticker1, ticker2, [days])",
+      example: '=POLYGON.getStockCorrelation("AAPL", "MSFT", 30)',
+      description: "Calculates correlation between two stocks over a period"
+    },
+    {
+      signature: "=POLYGON.getPortfolioSummary(portfolioData)",
+      example: '=POLYGON.getPortfolioSummary(A1:B10)',
+      description: "Creates a simple portfolio tracker with current values and returns"
     }
   ];
 
