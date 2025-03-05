@@ -5,14 +5,51 @@ Office.onReady(() => {
 
   // Define custom functions with signature and example formula
   const customFunctions = [
-      {
-          signature: "=POLYGON.getTickerDetails(ticker, [property])",
-          example: '=POLYGON.getTickerDetails("AAPL")'
-      },
-      {
-          signature: "=POLYGON.getTickerNews(ticker, [limit])",
-          example: '=POLYGON.getTickerNews("AAPL")'
-      }
+    {
+      signature: "=POLYGON.getTickerDetails(ticker, [property])",
+      example: '=POLYGON.getTickerDetails("AAPL")',
+      description: "Gets details for a specific ticker from Polygon.io"
+    },
+    {
+      signature: "=POLYGON.getTickerNews(ticker, [limit])",
+      example: '=POLYGON.getTickerNews("AAPL", 5)',
+      description: "Retrieves news articles for a specific stock ticker"
+    },
+    {
+      signature: "=POLYGON.getLatestPrice(ticker, [property])",
+      example: '=POLYGON.getLatestPrice("AAPL")',
+      description: "Retrieves the latest stock price data for a ticker"
+    },
+    {
+      signature: "=POLYGON.getHistoricalPrices(ticker, multiplier, timespan, from, to, [dataType])",
+      example: '=POLYGON.getHistoricalPrices("AAPL", "1", "day", "2023-01-01", "2023-01-31")',
+      description: "Retrieves historical stock price data for a specific timeframe"
+    },
+    {
+      signature: "=POLYGON.getMarketStatus([market])",
+      example: '=POLYGON.getMarketStatus("us")',
+      description: "Gets the current market status from Polygon.io"
+    },
+    {
+      signature: "=POLYGON.getFinancialMetrics(ticker, [metric])",
+      example: '=POLYGON.getFinancialMetrics("AAPL")',
+      description: "Retrieves financial metrics for a ticker"
+    },
+    {
+      signature: "=POLYGON.getEarnings(ticker, [limit])",
+      example: '=POLYGON.getEarnings("AAPL", 4)',
+      description: "Retrieves company earnings data for a ticker"
+    },
+    {
+      signature: "=POLYGON.getDividends(ticker, [limit])",
+      example: '=POLYGON.getDividends("AAPL", 4)',
+      description: "Retrieves dividend information for a ticker"
+    },
+    {
+      signature: "=POLYGON.getTechnicalIndicator(ticker, indicator, [period], [from], [to])",
+      example: '=POLYGON.getTechnicalIndicator("AAPL", "SMA", 14)',
+      description: "Calculates technical indicators for a stock"
+    }
   ];
 
   // Populate the functions list
