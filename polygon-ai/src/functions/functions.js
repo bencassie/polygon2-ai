@@ -1251,3 +1251,171 @@ export async function getPivotPoints(ticker, method = "standard") {
     return [[`Error: ${error.message}`]];
   }
 }
+
+/**
+ * Retrieves the daily open and close prices for a ticker on a specific date.
+ * @customfunction
+ * @param {string} ticker The stock ticker symbol (e.g., "AAPL").
+ * @param {string} date The date in YYYY-MM-DD format.
+ * @returns {Promise<string[][]>} A 2D array with the open, close, afterHours, preMarket, and status.
+ */
+export async function getDailyOpenClose(ticker, date) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return [["API key not set. Please set your Polygon.io API key."]];
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return [["Invalid date format. Use YYYY-MM-DD."]];
+    }
+
+    const url = `https://api.polygon.io/v1/open-close/${ticker}/${date}?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      return [[`HTTP error! status: ${response.status}`]];
+    }
+
+    const data = await response.json();
+    if (!data) {
+      return [["No data returned from API."]];
+    }
+
+    return [
+      ["Status", "Open", "Close", "After Hours", "Pre Market"],
+      [
+        data.status || "N/A",
+        data.open?.toFixed(2) || "N/A",
+        data.close?.toFixed(2) || "N/A",
+        data.afterHours?.toFixed(2) || "N/A",
+        data.preMarket?.toFixed(2) || "N/A"
+      ]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves the last trade for a ticker.
+ * @customfunction
+ * @param {string} ticker The stock ticker symbol (e.g., "AAPL").
+ * @returns {Promise<string[][]>} A 2D array with the last trade details.
+ */
+export async function getLastTrade(ticker) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return [["API key not set. Please set your Polygon.io API key."]];
+    }
+
+    const url = `https://api.polygon.io/v2/last/trade/${ticker}?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      return [[`HTTP error! status: ${response.status}`]];
+    }
+
+    const data = await response.json();
+    if (!data.results) {
+      return [["No data returned from API."]];
+    }
+
+    const trade = data.results;
+    return [
+      ["Price", "Size", "Exchange", "Conditions", "Timestamp"],
+      [
+        trade.p?.toFixed(2) || "N/A",
+        trade.s || "N/A",
+        trade.x || "N/A",
+        trade.c?.join(", ") || "N/A",
+        new Date(trade.t).toLocaleString() || "N/A"
+      ]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves the last quote for a ticker.
+ * @customfunction
+ * @param {string} ticker The stock ticker symbol (e.g., "AAPL").
+ * @returns {Promise<string[][]>} A 2D array with the last quote details.
+ */
+export async function getLastQuote(ticker) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return [["API key not set. Please set your Polygon.io API key."]];
+    }
+
+    const url = `https://api.polygon.io/v2/last/nbbo/${ticker}?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      return [[`HTTP error! status: ${response.status}`]];
+    }
+
+    const data = await response.json();
+    if (!data.results) {
+      return [["No data returned from API."]];
+    }
+
+    const quote = data.results;
+    return [
+      ["Bid Price", "Bid Size", "Ask Price", "Ask Size", "Timestamp"],
+      [
+        quote.P?.toFixed(2) || "N/A",
+        quote.S || "N/A",
+        quote.p?.toFixed(2) || "N/A",
+        quote.s || "N/A",
+        new Date(quote.t).toLocaleString() || "N/A"
+      ]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves a snapshot of a specific ticker.
+ * @customfunction
+ * @param {string} ticker The stock ticker symbol (e.g., "AAPL").
+ * @returns {Promise<string[][]>} A 2D array with snapshot data.
+ */
+export async function getSnapshotTicker(ticker) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      return [["API key not set. Please set your Polygon.io API key."]];
+    }
+
+    const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      return [[`HTTP error! status: ${response.status}`]];
+    }
+
+    const data = await response.json();
+    if (!data.ticker) {
+      return [["No data returned from API."]];
+    }
+
+    const snapshot = data.ticker;
+    const lastTrade = snapshot.lastTrade || {};
+    const lastQuote = snapshot.lastQuote || {};
+    const dailyBar = snapshot.day || {};
+
+    return [
+      ["Last Trade Price", "Last Bid", "Last Ask", "Daily Change", "Daily Change %"],
+      [
+        lastTrade.p?.toFixed(2) || "N/A",
+        lastQuote.P?.toFixed(2) || "N/A",
+        lastQuote.p?.toFixed(2) || "N/A",
+        (dailyBar.c - dailyBar.o)?.toFixed(2) || "N/A",
+        (((dailyBar.c - dailyBar.o) / dailyBar.o) * 100)?.toFixed(2) + "%" || "N/A"
+      ]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
