@@ -120,6 +120,7 @@ Office.onReady(() => {
 
     const signatureHeader = document.createElement("h3");
     signatureHeader.textContent = func.signature;
+    signatureHeader.title = func.description;  // Added for tooltips
     functionDiv.appendChild(signatureHeader);
 
     const insertButton = document.createElement("button");
