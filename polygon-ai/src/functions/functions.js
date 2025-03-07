@@ -1419,3 +1419,615 @@ export async function getSnapshotTicker(ticker) {
     return [[`Error: ${error.message}`]];
   }
 }
+
+// This file contains custom functions for accessing various Polygon.io APIs, including Options, Indices, Forex, Crypto, and Reference data.
+// Each function is designed to be used in an Excel add-in and returns data in a 2D array format suitable for spreadsheets.
+
+
+function isValidDate(date) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(date);
+}
+
+// ---------------------------
+// Options APIs
+// ---------------------------
+
+/**
+ * Retrieves historical OHLC data for an options contract.
+ * @customfunction
+ * @param {string} ticker The options contract ticker (e.g., "O:AAPL241025C00250000").
+ * @param {string} fromDate Start date in YYYY-MM-DD format.
+ * @param {string} toDate End date in YYYY-MM-DD format.
+ * @param {string} [timespan="day"] Timespan ("minute", "hour", "day").
+ * @returns {Promise<string[][]>} Array of OHLC data.
+ */
+export async function getOptionsHistoricalOHLC(ticker, fromDate, toDate, timespan = "day") {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set. Please set your Polygon.io API key."]];
+    if (!isValidDate(fromDate) || !isValidDate(toDate)) return [["Invalid date format. Use YYYY-MM-DD."]];
+    
+    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/${timespan}/${fromDate}/${toDate}?adjusted=true&sort=asc&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned from API."]];
+    
+    const results = [["Date", "Open", "High", "Low", "Close", "Volume"]];
+    data.results.forEach(bar => {
+      const date = new Date(bar.t).toISOString().split('T')[0];
+      results.push([date, bar.o, bar.h, bar.l, bar.c, bar.v]);
+    });
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves the last trade for an options contract.
+ * @customfunction
+ * @param {string} ticker The options contract ticker.
+ * @returns {Promise<string[][]>} Array with last trade details.
+ */
+export async function getOptionsLastTrade(ticker) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v2/last/trade/${ticker}?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const trade = data.results;
+    return [
+      ["Price", "Size", "Timestamp"],
+      [trade.p, trade.s, new Date(trade.t).toISOString()]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves the last quote for an options contract.
+ * @customfunction
+ * @param {string} ticker The options contract ticker.
+ * @returns {Promise<string[][]>} Array with last quote details.
+ */
+export async function getOptionsLastQuote(ticker) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v2/last/nbbo/${ticker}?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const quote = data.results;
+    return [
+      ["Bid", "Ask", "Timestamp"],
+      [quote.bp, quote.ap, new Date(quote.t).toISOString()]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves a snapshot of an options contract.
+ * @customfunction
+ * @param {string} ticker The options contract ticker.
+ * @returns {Promise<string[][]>} Array with snapshot data.
+ */
+export async function getOptionsSnapshot(ticker) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v3/snapshot?ticker.any=${ticker}&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results || data.results.length === 0) return [["No data returned."]];
+    
+    const snap = data.results[0];
+    return [
+      ["Last Price", "Open", "High", "Low", "Volume"],
+      [snap.lastTrade.p, snap.day.o, snap.day.h, snap.day.l, snap.day.v]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+// ---------------------------
+// Indices APIs
+// ---------------------------
+
+/**
+ * Retrieves historical OHLC data for an index.
+ * @customfunction
+ * @param {string} ticker The index ticker (e.g., "I:SPX").
+ * @param {string} fromDate Start date in YYYY-MM-DD format.
+ * @param {string} toDate End date in YYYY-MM-DD format.
+ * @param {string} [timespan="day"] Timespan ("minute", "hour", "day").
+ * @returns {Promise<string[][]>} Array of OHLC data.
+ */
+export async function getIndexHistoricalOHLC(ticker, fromDate, toDate, timespan = "day") {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    if (!isValidDate(fromDate) || !isValidDate(toDate)) return [["Invalid date format."]];
+    
+    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/${timespan}/${fromDate}/${toDate}?adjusted=true&sort=asc&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const results = [["Date", "Open", "High", "Low", "Close", "Volume"]];
+    data.results.forEach(bar => {
+      const date = new Date(bar.t).toISOString().split('T')[0];
+      results.push([date, bar.o, bar.h, bar.l, bar.c, bar.v]);
+    });
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves a snapshot of an index.
+ * @customfunction
+ * @param {string} ticker The index ticker.
+ * @returns {Promise<string[][]>} Array with snapshot data.
+ */
+export async function getIndexSnapshot(ticker) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v3/snapshot?ticker.any=${ticker}&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results || data.results.length === 0) return [["No data returned."]];
+    
+    const snap = data.results[0];
+    return [
+      ["Last Price", "Open", "High", "Low", "Volume"],
+      [snap.lastTrade.p, snap.day.o, snap.day.h, snap.day.l, snap.day.v]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+// ---------------------------
+// Forex APIs
+// ---------------------------
+
+/**
+ * Retrieves historical OHLC data for a forex pair.
+ * @customfunction
+ * @param {string} pair The forex pair (e.g., "C:EURUSD").
+ * @param {string} fromDate Start date in YYYY-MM-DD format.
+ * @param {string} toDate End date in YYYY-MM-DD format.
+ * @param {string} [timespan="day"] Timespan ("minute", "hour", "day").
+ * @returns {Promise<string[][]>} Array of OHLC data.
+ */
+export async function getForexHistoricalOHLC(pair, fromDate, toDate, timespan = "day") {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    if (!isValidDate(fromDate) || !isValidDate(toDate)) return [["Invalid date format."]];
+    
+    const url = `https://api.polygon.io/v2/aggs/ticker/${pair}/range/1/${timespan}/${fromDate}/${toDate}?adjusted=true&sort=asc&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const results = [["Date", "Open", "High", "Low", "Close"]];
+    data.results.forEach(bar => {
+      const date = new Date(bar.t).toISOString().split('T')[0];
+      results.push([date, bar.o, bar.h, bar.l, bar.c]);
+    });
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves grouped daily OHLC for all forex pairs.
+ * @customfunction
+ * @param {string} date Date in YYYY-MM-DD format.
+ * @returns {Promise<string[][]>} Array of daily OHLC data.
+ */
+export async function getForexGroupedDailyBars(date) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    if (!isValidDate(date)) return [["Invalid date format."]];
+    
+    const url = `https://api.polygon.io/v2/aggs/grouped/locale/global/market/fx/${date}?adjusted=true&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const results = [["Ticker", "Open", "High", "Low", "Close"]];
+    data.results.forEach(bar => {
+      results.push([bar.T, bar.o, bar.h, bar.l, bar.c]);
+    });
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves the last quote for a forex pair.
+ * @customfunction
+ * @param {string} pair The forex pair.
+ * @returns {Promise<string[][]>} Array with last quote details.
+ */
+export async function getForexLastQuote(pair) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v2/last/nbbo/${pair}?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const quote = data.results;
+    return [
+      ["Bid", "Ask", "Timestamp"],
+      [quote.bp, quote.ap, new Date(quote.t).toISOString()]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves a snapshot of a forex pair.
+ * @customfunction
+ * @param {string} pair The forex pair.
+ * @returns {Promise<string[][]>} Array with snapshot data.
+ */
+export async function getForexSnapshot(pair) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v3/snapshot?ticker.any=${pair}&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results || data.results.length === 0) return [["No data returned."]];
+    
+    const snap = data.results[0];
+    return [
+      ["Last Price", "Open", "High", "Low"],
+      [snap.lastQuote.p, snap.day.o, snap.day.h, snap.day.l]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+// ---------------------------
+// Crypto APIs
+// ---------------------------
+
+/**
+ * Retrieves historical OHLC data for a crypto pair.
+ * @customfunction
+ * @param {string} pair The crypto pair (e.g., "X:BTCUSD").
+ * @param {string} fromDate Start date in YYYY-MM-DD format.
+ * @param {string} toDate End date in YYYY-MM-DD format.
+ * @param {string} [timespan="day"] Timespan ("minute", "hour", "day").
+ * @returns {Promise<string[][]>} Array of OHLC data.
+ */
+export async function getCryptoHistoricalOHLC(pair, fromDate, toDate, timespan = "day") {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    if (!isValidDate(fromDate) || !isValidDate(toDate)) return [["Invalid date format."]];
+    
+    const url = `https://api.polygon.io/v2/aggs/ticker/${pair}/range/1/${timespan}/${fromDate}/${toDate}?adjusted=true&sort=asc&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const results = [["Date", "Open", "High", "Low", "Close", "Volume"]];
+    data.results.forEach(bar => {
+      const date = new Date(bar.t).toISOString().split('T')[0];
+      results.push([date, bar.o, bar.h, bar.l, bar.c, bar.v]);
+    });
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves grouped daily OHLC for all crypto pairs.
+ * @customfunction
+ * @param {string} date Date in YYYY-MM-DD format.
+ * @returns {Promise<string[][]>} Array of daily OHLC data.
+ */
+export async function getCryptoGroupedDailyBars(date) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    if (!isValidDate(date)) return [["Invalid date format."]];
+    
+    const url = `https://api.polygon.io/v2/aggs/grouped/locale/global/market/crypto/${date}?adjusted=true&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const results = [["Ticker", "Open", "High", "Low", "Close", "Volume"]];
+    data.results.forEach(bar => {
+      results.push([bar.T, bar.o, bar.h, bar.l, bar.c, bar.v]);
+    });
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves the last trade for a crypto pair.
+ * @customfunction
+ * @param {string} pair The crypto pair.
+ * @returns {Promise<string[][]>} Array with last trade details.
+ */
+export async function getCryptoLastTrade(pair) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v2/last/trade/${pair}?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const trade = data.results;
+    return [
+      ["Price", "Size", "Timestamp"],
+      [trade.p, trade.s, new Date(trade.t).toISOString()]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves the last quote for a crypto pair.
+ * @customfunction
+ * @param {string} pair The crypto pair.
+ * @returns {Promise<string[][]>} Array with last quote details.
+ */
+export async function getCryptoLastQuote(pair) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v2/last/nbbo/${pair}?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const quote = data.results;
+    return [
+      ["Bid", "Ask", "Timestamp"],
+      [quote.bp, quote.ap, new Date(quote.t).toISOString()]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves a snapshot of a crypto pair.
+ * @customfunction
+ * @param {string} pair The crypto pair.
+ * @returns {Promise<string[][]>} Array with snapshot data.
+ */
+export async function getCryptoSnapshot(pair) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v3/snapshot?ticker.any=${pair}&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results || data.results.length === 0) return [["No data returned."]];
+    
+    const snap = data.results[0];
+    return [
+      ["Last Price", "Open", "High", "Low", "Volume"],
+      [snap.lastTrade.p, snap.day.o, snap.day.h, snap.day.l, snap.day.v]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+// ---------------------------
+// Reference APIs
+// ---------------------------
+
+/**
+ * Retrieves a list of available markets.
+ * @customfunction
+ * @returns {Promise<string[][]>} Array of market information.
+ */
+export async function getMarkets() {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v3/reference/markets?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const results = [["Market", "Description"]];
+    data.results.forEach(market => {
+      results.push([market.market, market.desc]);
+    });
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves a list of available locales.
+ * @customfunction
+ * @returns {Promise<string[][]>} Array of locale information.
+ */
+export async function getLocales() {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v3/reference/locales?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const results = [["Locale", "Name"]];
+    data.results.forEach(locale => {
+      results.push([locale.locale, locale.name]);
+    });
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves company financials for a ticker.
+ * @customfunction
+ * @param {string} ticker The stock ticker (e.g., "AAPL").
+ * @param {string} [period="annual"] Period ("annual" or "quarterly").
+ * @param {number} [limit=1] Number of statements to retrieve.
+ * @returns {Promise<string[][]>} Array of financial data.
+ * @note This function may require a paid Polygon.io plan.
+ */
+export async function getCompanyFinancials(ticker, period = "annual", limit = 1) {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/vX/reference/financials?ticker=${ticker}&timeframe=${period}&limit=${limit}&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const financials = data.results[0].financials.income_statement;
+    return [
+      ["Metric", "Value"],
+      ["Revenues", financials.revenues?.value || "N/A"],
+      ["Net Income", financials.net_income?.value || "N/A"],
+      ["Operating Expenses", financials.operating_expenses?.value || "N/A"]
+    ];
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves a list of trade conditions.
+ * @customfunction
+ * @param {string} [assetClass="stocks"] Asset class ("stocks", "options", "crypto", "fx").
+ * @returns {Promise<string[][]>} Array of condition information.
+ */
+export async function getConditions(assetClass = "stocks") {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v3/reference/conditions?asset_class=${assetClass}&apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const results = [["ID", "Name", "Type"]];
+    data.results.forEach(condition => {
+      results.push([condition.id, condition.name, condition.type]);
+    });
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
+
+/**
+ * Retrieves a list of ticker types.
+ * @customfunction
+ * @returns {Promise<string[][]>} Array of ticker type information.
+ */
+export async function getTickerTypes() {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [["API key not set."]];
+    
+    const url = `https://api.polygon.io/v3/reference/ticker-types?apiKey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return [[`HTTP error! status: ${response.status}`]];
+    
+    const data = await response.json();
+    if (!data.results) return [["No data returned."]];
+    
+    const results = [["Code", "Description", "Asset Class"]];
+    data.results.forEach(type => {
+      results.push([type.code, type.description, type.asset_class]);
+    });
+    return results;
+  } catch (error) {
+    return [[`Error: ${error.message}`]];
+  }
+}
